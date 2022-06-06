@@ -1,0 +1,49 @@
+name: Create/Renew HTTPS Certs Using Certbot
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    inputs:
+      job:
+        type: choice
+        description: You can either recreate the cert from scratch, or simply renew it.
+        options:
+        - recreate
+        - renew
+        default: renew
+
+jobs:
+  recreate:
+    if: ${{ github.event.inputs.job == 'recreate' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete and recreate certificate using Certbot
+        uses: fifsky/ssh-action@58b3c484be9c20cf118fd3b939a6d2cb3c769512
+        with:
+          command: |
+            sudo apt-get install -y certbot
+            cd /home/dist/
+            forever stopall
+            sudo certbot delete --cert-name api.chipsmmo.cc --non-interactive
+            certbot certonly --standalone -d api.chipsmmo.cc
+            forever start server/index.js
+          host: ${{ secrets.SSH_HOST_IP }}
+          key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
+  renew:
+    if: ${{ github.event.inputs.job == 'renew' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Renew certificate using Certbot
+        env:
+          URL: api.chipsmmo.cc
+        uses: fifsky/ssh-action@58b3c484be9c20cf118fd3b939a6d2cb3c769512
+        with:
+          command: |
+            sudo apt-get install -y certbot
+            cd /home/dist/
+            forever stopall
+            certbot renew
+            forever start server/index.js
+          host: ${{ secrets.SSH_HOST_IP }}
+          key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
