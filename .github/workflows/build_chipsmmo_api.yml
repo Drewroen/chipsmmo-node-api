@@ -1,0 +1,78 @@
+name: Build ChipsMMO Api and deploy to server
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      - run: npm install -g typescript
+      
+      - name: Install npm packages for ChipsMMO
+        run: npm install
+          
+      - name: Compile ChipsMMO
+        run: tsc
+
+      - name: Install Node Packages into dist
+        run: npm run postbuild
+      
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1.3
+        with:
+          envkey_environment: prod
+          directory: ./dist/
+          file_name: .env
+
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
+          known_hosts: 'NA' # "Add known hosts" action step will find the known hosts instead
+
+      - name: Add known hosts
+        run: ssh-keyscan -H ${{ secrets.SSH_HOST_IP }} >> ~/.ssh/known_hosts
+
+      - name: Stop current running ChipsMMO services and ensure necessary packages are installed
+        uses: fifsky/ssh-action@58b3c484be9c20cf118fd3b939a6d2cb3c769512
+        with:
+          command: |
+            npm install -g forever
+            forever stopall
+            rm -rf /home/dist/
+            mkdir -p /home/dist/
+            sudo apt-get update -y
+            sudo apt-get install -y rsync
+            sudo apt-get install -y nodejs
+            sudo apt-get install -y npm
+
+          host: ${{ secrets.SSH_HOST_IP }}
+          key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
+
+      - name: Copy ChipsMMO into server through SSH
+        uses: Burnett01/rsync-deployments@0dc935cdecc5f5e571865e60d2a6cdc673704823
+        with:
+          switches: -avz
+          path: ./dist/
+          remote_path: /home/dist/
+          remote_host: ${{ secrets.SSH_HOST_IP }}
+          remote_user: root
+          remote_key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
+
+      - name: Start ChipsMMO with forever.js
+        uses: fifsky/ssh-action@58b3c484be9c20cf118fd3b939a6d2cb3c769512
+        with:
+          command: |
+            cd /home/dist/
+            forever stopall
+            forever start server.js
+          host: ${{ secrets.SSH_HOST_IP }}
+          key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
