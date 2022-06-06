@@ -16,10 +16,10 @@ jobs:
           node-version: 14
       - run: npm install -g typescript
       
-      - name: Install npm packages for ChipsMMO
+      - name: Install npm packages
         run: npm install
           
-      - name: Compile ChipsMMO
+      - name: Typescript Compile
         run: tsc
 
       - name: Install Node Packages into dist
