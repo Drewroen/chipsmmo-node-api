@@ -25,8 +25,8 @@ jobs:
             sudo apt-get install -y certbot
             cd /home/dist/
             forever stopall
-            sudo certbot delete --cert-name api.chipsmmo.cc --non-interactive --agree-tos --register-unsafely-without-email
-            certbot certonly --standalone -d api.chipsmmo.cc
+            sudo certbot delete --cert-name api.chipsmmo.cc --non-interactive 
+            certbot certonly --standalone -d api.chipsmmo.cc --agree-tos --register-unsafely-without-email
             forever start server.js
           host: ${{ secrets.SSH_HOST_IP }}
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
