@@ -45,6 +45,7 @@ jobs:
         uses: fifsky/ssh-action@58b3c484be9c20cf118fd3b939a6d2cb3c769512
         with:
           command: |
+            sudo apt-get install -y npm
             npm install -g forever
             forever stopall
             rm -rf /home/dist/
@@ -52,7 +53,6 @@ jobs:
             sudo apt-get update -y
             sudo apt-get install -y rsync
             sudo apt-get install -y nodejs
-            sudo apt-get install -y npm
 
           host: ${{ secrets.SSH_HOST_IP }}
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
