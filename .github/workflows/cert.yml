@@ -27,7 +27,7 @@ jobs:
             forever stopall
             sudo certbot delete --cert-name api.chipsmmo.cc --non-interactive
             certbot certonly --standalone -d api.chipsmmo.cc
-            forever start server/index.js
+            forever start server.js
           host: ${{ secrets.SSH_HOST_IP }}
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }} 
   renew:
